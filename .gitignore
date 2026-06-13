@@ -1,0 +1,15 @@
+# Node
+node_modules/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Logs
+*.log
