@@ -20,9 +20,30 @@ export default function PredictForm() {
     setError('')
     setResult(null)
 
-    // Basic front-end validation before calling the API.
+    // --- Front-end validation before calling the API -----------------------
+    // Mirrors the backend rules so the user gets instant, friendly feedback.
     if (hours === '' || attendance === '') {
       setError('Please enter both study hours and attendance.')
+      return
+    }
+
+    const h = Number(hours)
+    const a = Number(attendance)
+
+    if (Number.isNaN(h) || Number.isNaN(a)) {
+      setError('Please enter valid numbers for both fields.')
+      return
+    }
+    if (h < 0 || a < 0) {
+      setError('Values cannot be negative. Please enter positive numbers.')
+      return
+    }
+    if (h > 60) {
+      setError('That’s a lot of studying! Please enter realistic weekly study hours (0–60).')
+      return
+    }
+    if (a > 100) {
+      setError('Attendance must be a percentage between 0 and 100.')
       return
     }
 
@@ -33,8 +54,8 @@ export default function PredictForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          study_hours: Number(hours),
-          attendance: Number(attendance),
+          study_hours: h,
+          attendance: a,
         }),
       })
       const data = await res.json()
