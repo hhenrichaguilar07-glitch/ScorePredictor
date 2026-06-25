@@ -3,8 +3,8 @@ export const API_URL = 'http://localhost:5000'
 
 // Headline metrics shown across the site (these mirror the trained model / design).
 export const STATS = {
-  accuracy: '94.1',
-  r2: '0.91',
+  accuracy: '89',
+  r2: '0.89',
   records: '500+',
   avgStudyHours: '14.2',
   avgAttendance: '81',

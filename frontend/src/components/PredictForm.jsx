@@ -135,7 +135,7 @@ export default function PredictForm() {
             <span>
               <b>About the model:</b> Predictions use a <b>Linear Regression</b> model
               (scikit-learn) trained on <b>500+ student records</b>, with an accuracy
-              of <b>R² = 0.91</b>.
+              of <b>R² = 0.89</b>.
             </span>
           </div>
         </form>

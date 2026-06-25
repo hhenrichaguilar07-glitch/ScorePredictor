@@ -26,10 +26,16 @@ from flask_cors import CORS
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "ml_model", "model.pkl")
+SCALER_PATH = os.path.join(BASE_DIR, "..", "ml_model", "scaler.pkl")
 METRICS_PATH = os.path.join(BASE_DIR, "..", "ml_model", "metrics.json")
 
 with open(MODEL_PATH, "rb") as f:
     model = pickle.load(f)
+
+# The model is trained on StandardScaler-scaled features, so we must apply the
+# SAME scaler (fitted during training) to incoming inputs before predicting.
+with open(SCALER_PATH, "rb") as f:
+    scaler = pickle.load(f)
 
 # Load dataset metrics if available (used by /stats).
 try:
@@ -113,9 +119,12 @@ def predict():
         return jsonify({"error": "attendance must be between 0 and 100."}), 400
 
     # --- Run the model -------------------------------------------------------
-    # The model expects a 2D array: [[study_hours, attendance]]
+    # The model expects a 2D array: [[study_hours, attendance]]. Because the
+    # model was trained on scaled features, transform the raw inputs with the
+    # same scaler BEFORE predicting (otherwise predictions are way off).
     features = np.array([[study_hours, attendance]])
-    raw_score = float(model.predict(features)[0])
+    features_scaled = scaler.transform(features)
+    raw_score = float(model.predict(features_scaled)[0])
     score = round(max(0, min(100, raw_score)))  # clamp to 0-100 and round
 
     grade, label = grade_for_score(score)

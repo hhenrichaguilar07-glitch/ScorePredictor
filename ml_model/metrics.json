@@ -1,8 +1,8 @@
 {
-  "r2": 0.91,
-  "accuracy": 97.4,
+  "r2": 0.89,
+  "accuracy": 97.3,
   "avg_study_hours": 14.1,
   "avg_attendance": 81.0,
-  "avg_score": 76.5,
-  "n_records": 600
+  "avg_score": 76.4,
+  "n_records": 635
 }
