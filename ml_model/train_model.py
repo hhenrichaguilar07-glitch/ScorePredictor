@@ -8,7 +8,8 @@ real data preprocessing on a dataset that contains realistic imperfections.
                          realistic, simulated data-collection problems:
                          missing values, duplicate rows, and a few outliers.
   2. DATA INSPECTION   — examine the raw data (shape, types, statistics).
-  3. DATA CLEANING     — detect and HANDLE missing values, duplicates, outliers.
+  3. DATA CLEANING     — detect and HANDLE missing values (with SimpleImputer),
+                         duplicates, and outliers.
   4. PREPROCESSING     — separate features/target and apply feature scaling.
   5. TRAIN/TEST SPLIT  — divide the cleaned data for evaluation (80/20).
   6. MODEL TRAINING    — train a scikit-learn LinearRegression model.
@@ -29,15 +30,15 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import r2_score, mean_absolute_error
 import pickle
 import json
 
-# Print UTF-8 so symbols like "≈" don't crash on the Windows cp1252 console.
-try:
+# Print Unicode (em-dashes, etc.) cleanly on Windows consoles that default to
+# a legacy code page (e.g. cp1252) instead of UTF-8.
+if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
-except (AttributeError, ValueError):
-    pass
 
 RNG = np.random.default_rng(42)
 N_STUDENTS = 640  # extra rows because cleaning will remove some -> ends up 500+
@@ -105,14 +106,22 @@ def clean_data(df):
     """Detect and handle the data-quality problems, reporting before/after."""
     rows_before = len(df)
 
-    # --- 3a. Missing values: report, then fill with the column mean (imputation) ---
+    # --- 3a. Missing values: report, then impute with scikit-learn SimpleImputer ---
+    # SimpleImputer is scikit-learn's dedicated tool for filling missing values.
+    # We use strategy="mean", which replaces each missing value with the mean of
+    # its column. This keeps the row (imputation) instead of deleting it.
     missing = df.isnull().sum()
     total_missing = int(missing.sum())
     print("  Missing values per column (BEFORE):")
     print(missing.to_string().replace("\n", "\n    "))
     if total_missing > 0:
-        df = df.fillna(df.mean(numeric_only=True))
-        print(f"    -> Imputed {total_missing} missing value(s) using the column mean.")
+        num_cols = ["study_hours", "attendance", "exam_score"]
+        imputer = SimpleImputer(strategy="mean")
+        df[num_cols] = imputer.fit_transform(df[num_cols])
+        # round back to 1 decimal so the data stays tidy
+        df[num_cols] = df[num_cols].round(1)
+        print(f"    -> Imputed {total_missing} missing value(s) using "
+              f"SimpleImputer(strategy='mean').")
     print(f"  Missing values AFTER cleaning: {int(df.isnull().sum().sum())}")
     print()
 
@@ -150,7 +159,7 @@ def preprocess(df):
     print("  Applied StandardScaler (mean 0, std 1) so features share one scale.")
     print(f"    Means before scaling: {X.mean().round(2).to_dict()}")
     print(f"    Means after scaling : "
-          f"{dict(zip(X.columns, np.round(X_scaled.mean(axis=0), 2)))}  (≈ 0)")
+          f"{dict(zip(X.columns, np.round(X_scaled.mean(axis=0), 2)))}  (~ 0)")
     print()
     return X_scaled, y, scaler
 
@@ -208,7 +217,7 @@ def main():
     r2 = r2_score(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
     accuracy = 100 - mae
-    print(f"  R-squared : {r2:.3f}  (≈ {r2*100:.0f}% of variance explained)")
+    print(f"  R-squared : {r2:.3f}  (~ {r2*100:.0f}% of variance explained)")
     print(f"  MAE       : {mae:.2f} points")
     print(f"  Accuracy  : {accuracy:.1f}%\n")
 
